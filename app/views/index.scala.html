@@ -1,7 +1,16 @@
-@(message: String)
+@(events: List[(Event, Option[String])])
 
 @main("Welcome to Play") {
 
-    @play20.welcome(message)
+    <ul>
+    @for((event, link) <- events) {
 
+        <li>
+            @if(link.isDefined){
+                <iframe src="https://embed.spotify.com/?uri=@link" width="300" height="380" frameborder="0" allowtransparency="true"></iframe>
+            }
+            @event.date.format("dd/MM") @event.name
+        </li>
+    }
+    </ul>
 }
