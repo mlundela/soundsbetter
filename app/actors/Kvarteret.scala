@@ -18,7 +18,7 @@ class Kvarteret(webCrawler: ActorRef, spotify: ActorRef) extends Actor {
   import ExecutionContext.Implicits.global
 
   implicit val timeout: Timeout = 30.seconds
-  var events: List[(Event, Option[String])] = List()
+  var cache: List[(Event, Option[String])] = List()
 
   def parse: Response => List[Event] = {
     response =>
@@ -41,26 +41,29 @@ class Kvarteret(webCrawler: ActorRef, spotify: ActorRef) extends Actor {
   }
 
   def band: Event => String =
-    e => e.name.split( """\+""")(0).trim.replace(" ", "+")
+    e =>
+      if (e.name.contains("Up & Coming:"))
+        e.name.split(""":""")(1).split( """[\+,]""")(0).trim.replace(" ", "+")
+      else
+        e.name.split( """[\+,]""")(0).trim.replace(" ", "+")
 
   def receive = {
     case "get" =>
       val client = sender
-      if (events.isEmpty) {
+      if (cache.isEmpty) {
         val f = (webCrawler ? Get("http://kvarteret.no/program")).mapTo[Response]
         f.flatMap {
           response =>
-            val list = parse(response)
-            val names: List[String] = list.map(band)
-            (spotify ? names).mapTo[List[Option[String]]].map {
+            val events = parse(response)
+            (spotify ? events.map(band)).mapTo[List[Option[String]]].map {
               links =>
-                events = list.zip(links)
-                client ! events
+                cache = events.zip(links)
+                client ! cache
             }
         }
       }
       else {
-        client ! events
+        client ! cache
       }
   }
 }
