@@ -28,24 +28,20 @@ object BergenLive {
         while(children.hasNext){
           val child = children.next()
           val name = child.getElementsByTag("h4").text()
-          val date = child.getElementsByClass("tidspunkt").text().replaceAll("&nbsp;","").trim
-          val pt = """(\D+) (\d+)\. (\D+) (\d+)""".r
-
-          date match {
-            case pt(dd,d,m,y) =>{
-              println("Dagen i dag " + dd)
-              println("Datoen " + d)
-              println("Måned " + m)
-              println("År " + y)
-            }
-          }
-          val d: Date = new SimpleDateFormat("yyyy-MM-dd").parse(s"2014-01-12")
-          //println(date + "--" + name)
+          val date = child.getElementsByClass("tidspunkt").html().replaceAll("&nbsp;","").trim
+          println(date + "--" + name)
+          val d: Date = new SimpleDateFormat("yyyy-MM-dd").parse(parseDate(date))
           list = list :+ Event(d, name)
         }
        // log.info(list.toString())
       }
       list
+  }
+  def parseDate(s: String) : String = {
+    val pattern: Regex = """(\D+) (\d+)\. (\D+) (\d+)""".r
+    val m = pattern.findAllIn(s).matchData.next()
+    val dt: String = m.group(4).toString + "-" + findMonrth(m.group(3).toString) + "-" + m.group(2)
+    dt
   }
   def findMonrth : String => String = {
     s => s.toLowerCase match {
