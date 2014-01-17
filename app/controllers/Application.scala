@@ -32,4 +32,8 @@ object Application extends Controller {
     }
   }
 
+  def test = Action {
+    Ok(views.html.test())
+  }
+
 }
