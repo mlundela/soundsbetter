@@ -12,18 +12,11 @@ import java.text.SimpleDateFormat
 import scala.concurrent.ExecutionContext
 import akka.util.Timeout
 
-class Kvarteret(webCrawler: ActorRef, spotify: ActorRef) extends Actor {
+object Kvarteret {
 
-  import scala.concurrent.duration._
-  import ExecutionContext.Implicits.global
-
-  implicit val timeout: Timeout = 30.seconds
-  var cache: List[(Event, Option[String])] = List()
-
-  def parse: Response => List[Event] = {
-    response =>
+  def parse(html: String): List[Event] = {
       var list: List[Event] = List()
-      val doc: Document = Jsoup.parse(response.body)
+      val doc: Document = Jsoup.parse(html)
       val days = doc.getElementsByClass("agenda_day")
       val it = days.iterator()
       while (it.hasNext) {
@@ -46,6 +39,15 @@ class Kvarteret(webCrawler: ActorRef, spotify: ActorRef) extends Actor {
         e.name.split(""":""")(1).split( """[\+,]""")(0).trim.replace(" ", "+")
       else
         e.name.split( """[\+,]""")(0).trim.replace(" ", "+")
+}
+
+class Kvarteret(webCrawler: ActorRef, spotify: ActorRef) extends Actor {
+
+  import scala.concurrent.duration._
+  import ExecutionContext.Implicits.global
+
+  implicit val timeout: Timeout = 30.seconds
+  var cache: List[(Event, Option[String])] = List()
 
   def receive = {
     case "get" =>
@@ -54,8 +56,8 @@ class Kvarteret(webCrawler: ActorRef, spotify: ActorRef) extends Actor {
         val f = (webCrawler ? Get("http://kvarteret.no/program")).mapTo[Response]
         f.flatMap {
           response =>
-            val events = parse(response)
-            (spotify ? events.map(band)).mapTo[List[Option[String]]].map {
+            val events = Kvarteret.parse(response.body)
+            (spotify ? events.map(Kvarteret.band)).mapTo[List[Option[String]]].map {
               links =>
                 cache = events.zip(links)
                 client ! cache
