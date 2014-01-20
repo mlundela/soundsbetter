@@ -27,7 +27,7 @@ object Kvarteret {
         while (children.hasNext) {
           val child = children.next()
           val name: String = child.getElementsByTag("a").text()
-          list = list :+ Event(d, name)
+          list = list :+ Event(d, name, "Kvarteret")
         }
       }
       list
@@ -41,7 +41,7 @@ object Kvarteret {
         e.name.split( """[\+,]""")(0).trim.replace(" ", "+")
 }
 
-class Kvarteret(webCrawler: ActorRef, spotify: ActorRef) extends Actor {
+class Kvarteret(webCrawler: ActorRef, spotify: ActorRef, soundcloud: ActorRef) extends Actor {
 
   import scala.concurrent.duration._
   import ExecutionContext.Implicits.global
@@ -58,6 +58,11 @@ class Kvarteret(webCrawler: ActorRef, spotify: ActorRef) extends Actor {
           response =>
             val events = Kvarteret.parse(response.body)
             (spotify ? events.map(Kvarteret.band)).mapTo[List[Option[String]]].map {
+              links =>
+                cache = events.zip(links)
+                client ! cache
+            }
+            (soundcloud ? events.map(Kvarteret.band)).mapTo[List[Option[String]]].map {
               links =>
                 cache = events.zip(links)
                 client ! cache

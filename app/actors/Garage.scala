@@ -1,4 +1,4 @@
-package actors
+                                                   package actors
 
 import akka.actor.{ActorLogging, ActorRef, Actor}
 import akka.pattern.ask
@@ -6,34 +6,30 @@ import play.api.libs.ws.Response
 import actors.WebCrawler.Get
 import models.Event
 import org.jsoup.nodes.{Element, Document}
+import org.jsoup.select.{Elements}
 import org.jsoup.Jsoup
 import java.util.{Locale, Date}
 import java.text.SimpleDateFormat
 import scala.concurrent.ExecutionContext
 import akka.util.Timeout
-import com.ning.http.util.DateUtil
 import scala.util.matching.Regex
 
-object BergenLive {
+object Garage {
 
   def parse(html: String) : List[Event] = {
+    println(html)
       var list: List[Event] = List()
       val doc: Document = Jsoup.parse(html)
-      val days = doc.getElementsByClass("event-list")
-      val it = days.iterator()
+      val table: Elements = doc.select("table")
+      val it = table.iterator()
       while (it.hasNext) {
         val day: Element = it.next()
+        val name = day.getElementsByClass("header").text()
+        //val date = day.getElementsByClass("tidspunkt").html().replaceAll("&nbsp;","").trim
+        println(name)
+        val d: Date = new SimpleDateFormat("yyyy-MM-dd").parse("2014-12-12")
+        list = list :+ Event(d, name, "Garage")
 
-        val children = day.getElementsByClass("item").iterator()
-        while(children.hasNext){
-          val child = children.next()
-          val name = child.getElementsByTag("h4").text()
-          val date = child.getElementsByClass("tidspunkt").html().replaceAll("&nbsp;","").trim
-          val venue =child.getElementsByClass("Scene").html()
-          //println(date + "--" + name)
-          val d: Date = new SimpleDateFormat("yyyy-MM-dd").parse(parseDate(date))
-          list = list :+ Event(d, name, venue)
-        }
        // log.info(list.toString())
       }
       list
@@ -69,7 +65,7 @@ object BergenLive {
         e.name.split( """[\+,]""")(0).trim.replace(" ", "+")
 }
 
-class BergenLive(webCrawler: ActorRef, spotify: ActorRef) extends Actor with ActorLogging{
+class Garage(webCrawler: ActorRef, spotify: ActorRef) extends Actor with ActorLogging{
 
   import scala.concurrent.duration._
   import ExecutionContext.Implicits.global
@@ -81,10 +77,10 @@ class BergenLive(webCrawler: ActorRef, spotify: ActorRef) extends Actor with Act
     case "get" =>
       val client = sender
       if (cache.isEmpty) {
-        val f = (webCrawler ? Get("http://bergenlive.no/konsertkalender/")).mapTo[Response]
+        val f = (webCrawler ? Get("http://www.garage.no/")).mapTo[Response]
         f.flatMap {
           response =>
-            val events = BergenLive.parse(response.body)
+            val events = Garage.parse(response.body)
             (spotify ? events.map(BergenLive.band)).mapTo[List[Option[String]]].map {
               links =>
                 cache = events.zip(links)

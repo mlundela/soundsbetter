@@ -2,4 +2,4 @@ package models
 
 import java.util.Date
 
-case class Event(date: Date, name: String)
+case class Event(date: Date, name: String, venue: String)

@@ -12,14 +12,14 @@ class BergenLiveParseSpec extends Specification {
 
   "Parsing" should {
 
-//    "work" in {
-//      val html: String = io.Source.fromInputStream(getClass.getResourceAsStream("test/BergenLive-source.html")).mkString
-//      val kvelertak: Event = Event(new SimpleDateFormat("yyyy-MM-dd").parse("2014-02-06"), "Kvelertak")
-//      val parse: List[Event] = BergenLive.parse(html)
-//      //parse === List()
-//      parse.contains(kvelertak)
-//
-//    }
+    "work" in {
+      val html: String = io.Source.fromInputStream(getClass.getResourceAsStream("test/BergenLive-source.html")).mkString
+      val kvelertak: Event = Event(new SimpleDateFormat("yyyy-MM-dd").parse("2014-02-06"), "Kvelertak", "USF Verftet")
+      val parse: List[Event] = BergenLive.parse(html)
+      //parse === List()
+      parse.contains(kvelertak)
+
+    }
 
     "parseTest" in {
       val s = "s&oslash;ndag 2.februar2014"

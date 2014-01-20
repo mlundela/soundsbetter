@@ -15,7 +15,7 @@ class KvarteretParseSpec extends Specification {
   "Parsing" should {
     "work" in {
       val html: String = io.Source.fromInputStream(getClass.getResourceAsStream("test/kvarteret-source.html")).mkString
-      val lemaitre: Event = Event(new SimpleDateFormat("yyyy-MM-dd").parse("2014-01-23"), "Lemâitre")
+      val lemaitre: Event = Event(new SimpleDateFormat("yyyy-MM-dd").parse("2014-01-23"), "Lemâitre", "Kvarteret")
       Kvarteret.parse(html).contains(lemaitre)
     }
     "blah" in {
