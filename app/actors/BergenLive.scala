@@ -66,7 +66,7 @@ object BergenLive {
         e.name.split( """[\+,]""")(0).trim.replace(" ", "+").replace("&", "and")
 }
 
-class BergenLive(webCrawler: ActorRef, spotify: ActorRef) extends Actor with ActorLogging{
+class BergenLive(webCrawler: ActorRef, spotify: ActorRef, soundcloud: ActorRef) extends Actor with ActorLogging{
 
   import scala.concurrent.duration._
   import ExecutionContext.Implicits.global
