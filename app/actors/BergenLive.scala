@@ -32,7 +32,7 @@ object BergenLive {
           val venue =child.getElementsByClass("Scene").html()
           //println(date + "--" + name)
           val d: Date = new SimpleDateFormat("yyyy-MM-dd").parse(parseDate(date))
-          list = list :+ Event(d, name, venue)
+          // TODO list = list :+ Event(d, name, venue)
         }
        // log.info(list.toString())
       }

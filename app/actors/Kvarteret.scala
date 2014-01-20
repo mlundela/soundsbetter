@@ -14,8 +14,8 @@ import akka.util.Timeout
 
 object Kvarteret {
 
-  def parse(html: String): List[Event] = {
-      var list: List[Event] = List()
+  def parse(html: String): List[(Date, String)] = {
+      var list: List[(Date, String)] = List()
       val doc: Document = Jsoup.parse(html)
       val days = doc.getElementsByClass("agenda_day")
       val it = days.iterator()
@@ -27,18 +27,18 @@ object Kvarteret {
         while (children.hasNext) {
           val child = children.next()
           val name: String = child.getElementsByTag("a").text()
-          list = list :+ Event(d, name, "Kvarteret")
+          list = list :+ (d, name)
         }
       }
       list
   }
 
-  def band: Event => String =
+  def band: String => String =
     e =>
-      if (e.name.contains("Up & Coming:"))
-        e.name.split(""":""")(1).split( """[\+,]""")(0).trim.replace(" ", "+")
+      if (e.contains("Up & Coming:"))
+        e.split(""":""")(1).split( """[\+,]""")(0).trim.replace(" ", "+")
       else
-        e.name.split( """[\+,]""")(0).trim.replace(" ", "+")
+        e.split( """[\+,]""")(0).trim.replace(" ", "+")
 }
 
 class Kvarteret(webCrawler: ActorRef, spotify: ActorRef, soundcloud: ActorRef) extends Actor {
@@ -47,7 +47,7 @@ class Kvarteret(webCrawler: ActorRef, spotify: ActorRef, soundcloud: ActorRef) e
   import ExecutionContext.Implicits.global
 
   implicit val timeout: Timeout = 30.seconds
-  var cache: List[(Event, Option[String])] = List()
+  var cache: List[Event] = List()
 
   def receive = {
     case "get" =>
@@ -56,17 +56,19 @@ class Kvarteret(webCrawler: ActorRef, spotify: ActorRef, soundcloud: ActorRef) e
         val f = (webCrawler ? Get("http://kvarteret.no/program")).mapTo[Response]
         f.flatMap {
           response =>
-            val events = Kvarteret.parse(response.body)
-            (spotify ? events.map(Kvarteret.band)).mapTo[List[Option[String]]].map {
+            val events: List[(Date, String)] = Kvarteret.parse(response.body)
+            (spotify ? events.map(_._2).map(e => Kvarteret.band)).mapTo[List[Option[String]]].map {
               links =>
-                cache = events.zip(links)
+                cache = events.zip(links).map {
+                  case ((date, name), link) => Event(date, name, "Kvarteret", None, link)
+                }
                 client ! cache
             }
-            (soundcloud ? events.map(Kvarteret.band)).mapTo[List[Option[String]]].map {
-              links =>
-                cache = events.zip(links)
-                client ! cache
-            }
+//            (soundcloud ? events.map(Kvarteret.band)).mapTo[List[Option[String]]].map {
+//              links =>
+//                cache = events.zip(links)
+//                client ! cache
+//            }
         }
       }
       else {
