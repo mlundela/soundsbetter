@@ -63,10 +63,7 @@ object BergenLive {
   }
   def band: Event => String =
     e =>
-      if (e.name.contains("Up & Coming:"))
-        e.name.split(""":""")(1).split( """[\+,]""")(0).trim.replace(" ", "+")
-      else
-        e.name.split( """[\+,]""")(0).trim.replace(" ", "+")
+        e.name.split( """[\+,]""")(0).trim.replace(" ", "+").replace("&", "and")
 }
 
 class BergenLive(webCrawler: ActorRef, spotify: ActorRef) extends Actor with ActorLogging{
