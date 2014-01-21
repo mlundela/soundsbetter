@@ -4,11 +4,22 @@ import akka.actor.{ActorRef, Actor}
 import akka.pattern.ask
 import play.api.libs.ws.Response
 import actors.WebCrawler.Get
-import models.Event
 import scala.concurrent.{ExecutionContext, Future}
 import com.fasterxml.jackson.databind.JsonMappingException
 import akka.util.Timeout
 import akka.event.LoggingReceive
+import play.api.libs.json.JsValue
+
+object Spotify {
+
+  def parse(json: JsValue): Option[String] =
+    try {
+      ((json \ "tracks")(0) \ "href").asOpt[String]
+    }
+    catch {
+      case e: JsonMappingException => None
+    }
+}
 
 class Spotify(webCrawler: ActorRef) extends Actor {
 
@@ -32,16 +43,7 @@ class Spotify(webCrawler: ActorRef) extends Actor {
 
       fResponses.map {
         responses =>
-          val links = responses.map {
-            r =>
-              try {
-                ((r.json \ "tracks")(0) \ "href").asOpt[String]
-              }
-              catch {
-                case e: JsonMappingException => None
-              }
-          }
-
+          val links = responses.map(r => Spotify.parse(r.json))
           client ! links
       }
 

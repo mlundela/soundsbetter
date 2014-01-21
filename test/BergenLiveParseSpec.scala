@@ -18,7 +18,7 @@ class BergenLiveParseSpec extends Specification {
       val parse: List[Event] = BergenLive.parse(html)
       //parse === List()
       parse.contains(kvelertak)
-
+      pending
     }
 
     "parseTest" in {

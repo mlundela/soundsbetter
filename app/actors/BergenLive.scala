@@ -32,7 +32,7 @@ object BergenLive {
           val venue =child.getElementsByClass("Scene").html()
           //println(date + "--" + name)
           val d: Date = new SimpleDateFormat("yyyy-MM-dd").parse(parseDate(date))
-          list = list :+ Event(d, name, venue)
+          // TODO list = list :+ Event(d, name, venue)
         }
        // log.info(list.toString())
       }
@@ -63,10 +63,7 @@ object BergenLive {
   }
   def band: Event => String =
     e =>
-      if (e.name.contains("Up & Coming:"))
-        e.name.split(""":""")(1).split( """[\+,]""")(0).trim.replace(" ", "+")
-      else
-        e.name.split( """[\+,]""")(0).trim.replace(" ", "+")
+        e.name.split( """[\+,]""")(0).trim.replace(" ", "+").replace("&", "and")
 }
 
 class BergenLive(webCrawler: ActorRef, spotify: ActorRef, soundcloud: ActorRef) extends Actor with ActorLogging{
