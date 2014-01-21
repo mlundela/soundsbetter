@@ -26,6 +26,7 @@ class SoundCloud(webCrawler: ActorRef) extends Actor{
 
       val fSoundCloud: List[Future[Response]] = bands.map {
         name =>
+              println(name)
               (webCrawler ? Get(search + name + filter)).mapTo[Response]
       }
       val fResponses: Future[List[Response]] = Future.sequence(fSoundCloud)
@@ -35,7 +36,8 @@ class SoundCloud(webCrawler: ActorRef) extends Actor{
           val links = responses.map {
             r =>
               try {
-                ((r.json \ "license") \ "uri").asOpt[String]
+
+                ((r.json \ "track") \ "uri").asOpt[String]
               }
               catch {
                 case e: JsonMappingException => None

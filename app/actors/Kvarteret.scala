@@ -62,11 +62,14 @@ class Kvarteret(webCrawler: ActorRef, spotify: ActorRef, soundcloud: ActorRef) e
                 cache = events.zip(links)
                 client ! cache
             }
+            /*
             (soundcloud ? events.map(Kvarteret.band)).mapTo[List[Option[String]]].map {
               links =>
                 cache = events.zip(links)
                 client ! cache
             }
+            */
+
         }
       }
       else {

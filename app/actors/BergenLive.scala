@@ -27,7 +27,7 @@ object BergenLive {
         val children = day.getElementsByClass("item").iterator()
         while(children.hasNext){
           val child = children.next()
-          val name = child.getElementsByTag("h4").text()
+          val name = child.getElementsByTag("h4").text().replaceAll("&", "and")
           val date = child.getElementsByClass("tidspunkt").html().replaceAll("&nbsp;","").trim
           val venue =child.getElementsByClass("Scene").html()
           //println(date + "--" + name)
@@ -69,7 +69,7 @@ object BergenLive {
         e.name.split( """[\+,]""")(0).trim.replace(" ", "+")
 }
 
-class BergenLive(webCrawler: ActorRef, spotify: ActorRef) extends Actor with ActorLogging{
+class BergenLive(webCrawler: ActorRef, spotify: ActorRef, soundcloud: ActorRef) extends Actor with ActorLogging{
 
   import scala.concurrent.duration._
   import ExecutionContext.Implicits.global
@@ -90,6 +90,15 @@ class BergenLive(webCrawler: ActorRef, spotify: ActorRef) extends Actor with Act
                 cache = events.zip(links)
                 client ! cache
             }
+            (soundcloud ? events.map(BergenLive.band)).mapTo[List[Option[String]]].map {
+              links =>
+                cache = events.zip(links)
+
+                client ! cache
+            }
+
+
+
         }
       }
       else {
