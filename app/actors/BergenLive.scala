@@ -13,11 +13,12 @@ import scala.concurrent.ExecutionContext
 import akka.util.Timeout
 import com.ning.http.util.DateUtil
 import scala.util.matching.Regex
+import java.util
 
 object BergenLive {
 
-  def parse(html: String) : List[Event] = {
-      var list: List[Event] = List()
+  def parse(html: String) : List[(Date, String, String)] = {
+      var list: List[(Date, String, String)] = List()
       val doc: Document = Jsoup.parse(html)
       val days = doc.getElementsByClass("event-list")
       val it = days.iterator()
@@ -32,7 +33,7 @@ object BergenLive {
           val venue =child.getElementsByClass("Scene").html()
           //println(date + "--" + name)
           val d: Date = new SimpleDateFormat("yyyy-MM-dd").parse(parseDate(date))
-          // TODO list = list :+ Event(d, name, venue)
+          list = list :+(d, name, venue)
         }
        // log.info(list.toString())
       }
@@ -61,18 +62,18 @@ object BergenLive {
       case _ => null
     }
   }
-  def band: Event => String =
-    e =>
-        e.name.split( """[\+,]""")(0).trim.replace(" ", "+").replace("&", "and")
+  def getBandName(elems : List[(Date, String, String)]) : List[String] = elems.map{
+    case (date, name, venue) =>
+         name.replaceAll(" ","""+""")
+  }
 }
-
 class BergenLive(webCrawler: ActorRef, spotify: ActorRef, soundcloud: ActorRef) extends Actor with ActorLogging{
 
   import scala.concurrent.duration._
   import ExecutionContext.Implicits.global
 
   implicit val timeout: Timeout = 30.seconds
-  var cache: List[(Event, Option[String])] = List()
+  var cache: List[Event] = List()
 
   def receive = {
     case "get" =>
@@ -81,21 +82,21 @@ class BergenLive(webCrawler: ActorRef, spotify: ActorRef, soundcloud: ActorRef) 
         val f = (webCrawler ? Get("http://bergenlive.no/konsertkalender/")).mapTo[Response]
         f.flatMap {
           response =>
-            val events = BergenLive.parse(response.body)
-            (spotify ? events.map(BergenLive.band)).mapTo[List[Option[String]]].map {
-              links =>
-                cache = events.zip(links)
-                client ! cache
+            val dateAndNames: List[(Date, String, String)] = BergenLive.parse(response.body)
+
+            val fSpotify = (spotify ? BergenLive.getBandName(dateAndNames)).mapTo[List[Option[String]]]
+            val fSoundcloud = (soundcloud ? BergenLive.getBandName(dateAndNames)).mapTo[List[Option[String]]]
+
+            for {
+              links1 <- fSpotify
+              links2 <- fSoundcloud
+            } yield {
+              val links: List[(Option[String], Option[String])] = links1.zip(links2)
+              cache = dateAndNames.zip(links).map {
+                case ((date, name, venue), (linkSpotify, linkSoundcloud)) => Event(date, name, venue, linkSoundcloud, linkSpotify)
+              }
+              client ! cache
             }
-            (soundcloud ? events.map(BergenLive.band)).mapTo[List[Option[String]]].map {
-              links =>
-                cache = events.zip(links)
-
-                client ! cache
-            }
-
-
-
         }
       }
       else {
@@ -103,3 +104,4 @@ class BergenLive(webCrawler: ActorRef, spotify: ActorRef, soundcloud: ActorRef) 
       }
   }
 }
+

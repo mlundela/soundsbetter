@@ -15,10 +15,7 @@ class BergenLiveParseSpec extends Specification {
     "work" in {
       val html: String = io.Source.fromInputStream(getClass.getResourceAsStream("test/BergenLive-source.html")).mkString
       val kvelertak: Event = Event(new SimpleDateFormat("yyyy-MM-dd").parse("2014-02-06"), "Kvelertak", "USF Verftet")
-      val parse: List[Event] = BergenLive.parse(html)
-      //parse === List()
-      parse.contains(kvelertak)
-      pending
+      BergenLive.parse(html).contains(kvelertak.date, kvelertak.name, kvelertak.venue)
     }
 
     "parseTest" in {

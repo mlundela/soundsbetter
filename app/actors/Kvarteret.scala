@@ -77,7 +77,7 @@ class Kvarteret(webCrawler: ActorRef, spotify: ActorRef, soundcloud: ActorRef) e
               }
               client ! cache
             }
-            */
+
 
         }
       }
