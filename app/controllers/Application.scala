@@ -21,14 +21,14 @@ object Application extends Controller {
   val soundcloud = Akka.system.actorOf(Props(classOf[SoundCloud], webCrawler), "soundcloud")
   val kvarteret = Akka.system.actorOf(Props(classOf[Kvarteret], webCrawler, spotify,soundcloud), "kvarteret")
   val bergenlive = Akka.system.actorOf(Props(classOf[BergenLive], webCrawler, spotify, soundcloud), "bergenlive")
-   //val garage = Akka.system.actorOf(Props(classOf[BergenLive], webCrawler, spotify), "Garage")
+  val bergenfest = Akka.system.actorOf(Props(classOf[BergenFest], webCrawler, spotify, soundcloud), "bergenfest")
 
   def index = Action.async {
 
-    //val f2 = (garage ? "get").mapTo[List[(Event, Option[String])]]
+    val f2 = (bergenfest ? "get").mapTo[List[Event]]
     val f1 = (bergenlive ? "get").mapTo[List[Event]]
     val f = (kvarteret ? "get").mapTo[List[Event]]
-    val list = List(f,f1)
+    val list = List(f2, f1, f)
     val l1: Future[List[List[Event]]] = Future.sequence(list)
     l1.map {
       events =>
