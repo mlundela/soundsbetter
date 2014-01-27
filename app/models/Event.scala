@@ -7,3 +7,9 @@ case class Event(date: Date,
                  venue: String,
                  soundcloud: Option[String] = None,
                  spotify: Option[String] = None)
+
+object Event{
+
+
+
+}
